@@ -5,69 +5,93 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 
+import java.util.Random;
+
 public class MainActivity extends AppCompatActivity {
 
+
+    // Example of a deadlock condition
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Countdown countdown1 = new Countdown();
-        Countdown countdown2 = new Countdown();
-
-        CountdownThread t1 = new CountdownThread(countdown1);
-        t1.setName("Thread1");
-        CountdownThread t2 = new CountdownThread(countdown2);
-        t2.setName("Thread2");
-
-        t1.start();
-        t2.start();
+        Message msg = new Message();
+        (new Thread( new Writer(msg))).start();
+        (new Thread(new Reader(msg))).start();
 
     }
 
 }
 
-class Countdown {
+class Message {
+    private String message;
+    private boolean empty = true;
 
-    //  private int i;
-
-    public void doCountDown() {
-
-        String color = "";
-
-        switch (Thread.currentThread().getName()) {
-            case "Thread1":
-                color = "RED";
-                break;
-            case "Thread2":
-                color = "BLUE";
-                break;
-            default:
-                Thread.currentThread().setName("White" + Thread.currentThread().getName());
+    public synchronized String read() {
+        while (empty) {
         }
+        empty = true;
+        return message;
 
-        synchronized (this) {
-            for (int i = 10; i > 0; i--) {
-                Log.d("TAG", color + " " + Thread.currentThread().getName() + " " + i);
+    }
+
+    public synchronized void write(String message) {
+        while (!empty) {
+        }
+        empty = false;
+        this.message = message;
+    }
+}
+
+class Writer implements Runnable {
+
+    private Message msg;
+
+    public Writer(Message msg) {
+        this.msg = msg;
+    }
+
+    public void run() {
+        String[] messages = {"Konnichiha", "Salam", "Hello"};
+        Random rand = new Random();
+        for (int i = 0; i < messages.length; i++) {
+            msg.write(messages[i]);
+            try {
+                Thread.sleep(rand.nextInt(2000));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
-
+        msg.write("Finished writing");
     }
-
 
 }
 
-class CountdownThread extends Thread {
-    Countdown threadCountdown;
+class Reader implements Runnable {
 
-    public CountdownThread(Countdown countdown) {
-        threadCountdown = countdown;
+    private Message msg;
+
+    public Reader(Message msg) {
+        this.msg = msg;
     }
 
     @Override
     public void run() {
-        threadCountdown.doCountDown();
+
+        Random rand = new Random();
+        for (String latestMessage = msg.read(); !latestMessage.equals("Finished writing");
+             latestMessage = msg.read()) {
+            Log.d("TAG", "latest message: " + latestMessage);
+            try {
+                Thread.sleep(rand.nextInt(2000));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 }
+
 
