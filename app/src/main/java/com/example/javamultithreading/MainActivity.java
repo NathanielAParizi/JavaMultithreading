@@ -10,7 +10,7 @@ import java.util.Random;
 public class MainActivity extends AppCompatActivity {
 
 
-    // Example of a deadlock condition
+    // Example of a Consumer Producer
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,17 +31,29 @@ class Message {
 
     public synchronized String read() {
         while (empty) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
         empty = true;
+        notifyAll();
         return message;
 
     }
 
     public synchronized void write(String message) {
         while (!empty) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
         empty = false;
         this.message = message;
+        notifyAll();
     }
 }
 
@@ -54,7 +66,8 @@ class Writer implements Runnable {
     }
 
     public void run() {
-        String[] messages = {"Konnichiha", "Salam", "Hello"};
+        String[] messages = {"Konnichiha", "Salam", "Hello", "Nihao", "Ola", "Halo","Buenos Noches",
+        "Konbanwa","Ruz bekheyr","Xaoshanghao"};
         Random rand = new Random();
         for (int i = 0; i < messages.length; i++) {
             msg.write(messages[i]);
