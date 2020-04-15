@@ -13,33 +13,61 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Countdown countdown1 = new Countdown();
+        Countdown countdown2 = new Countdown();
 
+        CountdownThread t1 = new CountdownThread(countdown1);
+        t1.setName("Thread1");
+        CountdownThread t2 = new CountdownThread(countdown2);
+        t2.setName("Thread2");
 
-        final Thread redThread = new RedThread();
-        redThread.setName(" **** COOL THREAD ****");
+        t1.start();
+        t2.start();
 
-        redThread.start();
+    }
 
-        Thread blueThread = new Thread(new myRunnable() {
+}
 
-            @Override
-            public void run() {
-                try {
-                    redThread.join();
-                    Log.d("TAG", "hello from anonymous class's implementation of run()" +
-                            " RED THREAD TERMINATED / TIMEDOUT");
+class Countdown {
 
-                } catch (InterruptedException e) {
-                    Log.d("TAG", "I never ran afterall");
+    //  private int i;
 
-                }
+    public void doCountDown() {
 
+        String color = "";
+
+        switch (Thread.currentThread().getName()) {
+            case "Thread1":
+                color = "RED";
+                break;
+            case "Thread2":
+                color = "BLUE";
+                break;
+            default:
+                Thread.currentThread().setName("White" + Thread.currentThread().getName());
+        }
+
+        synchronized (this) {
+            for (int i = 10; i > 0; i--) {
+                Log.d("TAG", color + " " + Thread.currentThread().getName() + " " + i);
             }
-        });
-
-        blueThread.start();
+        }
 
     }
 
 
 }
+
+class CountdownThread extends Thread {
+    Countdown threadCountdown;
+
+    public CountdownThread(Countdown countdown) {
+        threadCountdown = countdown;
+    }
+
+    @Override
+    public void run() {
+        threadCountdown.doCountDown();
+    }
+}
+
